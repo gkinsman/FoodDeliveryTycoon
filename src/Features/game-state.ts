@@ -1,24 +1,5 @@
-﻿import { computed, Ref, ref } from 'vue'
-import { MapboxGeoJSONFeature } from 'mapbox-gl'
-
-export class Hub {
-  public buyPrice: number
-  public sellPrice: number
-
-  constructor(
-    public name: string,
-    public numberOfNearbyRestaurants: number,
-    public feature: MapboxGeoJSONFeature,
-    public isOwned: boolean
-  ) {
-    this.buyPrice = this.numberOfNearbyRestaurants * 10
-    this.sellPrice = this.numberOfNearbyRestaurants * 5
-  }
-
-  public static getName(id: string | number): string {
-    return `hub-${id}`
-  }
-}
+﻿import { Ref, ref } from 'vue'
+import { Hub } from './hub'
 
 export interface GameState {
   discoveredHubs: Map<string, Hub>

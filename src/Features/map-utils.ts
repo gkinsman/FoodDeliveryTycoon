@@ -1,8 +1,9 @@
 ﻿import mapboxgl, { MapboxGeoJSONFeature } from 'mapbox-gl'
 import centerOfMass from '@turf/center-of-mass'
-import { useRestaurants } from './restaurants'
-import { Feature, GeoJSON } from 'geojson'
-import { Hub, useGameState } from './game-state'
+import { useRestaurants } from './data/restaurants'
+import { useGameState } from './game-state'
+import { Hub } from './hub'
+import { Feature, Polygon } from 'geojson'
 
 export function findFirstSymbolLayerId(map: mapboxgl.Map): string | undefined {
   const layers = map.getStyle().layers
@@ -26,12 +27,12 @@ export async function selectHub(map: mapboxgl.Map, hub: Hub) {
   const { selectHub } = useGameState()
   await showRestaurants(map, hub)
   zoomToFeature(map, hub.feature)
-  await selectHub(hub)
+  selectHub(hub)
 }
 
 export function zoomToFeature(
   map: mapboxgl.Map,
-  feature: MapboxGeoJSONFeature
+  feature: Feature<Polygon>
 ): void {
   const zoomTo = centerOfMass(feature).geometry.coordinates
 

@@ -1,4 +1,4 @@
-﻿import { Feature, FeatureCollection, GeoJSON, Point } from 'geojson'
+﻿import { Feature, FeatureCollection, GeoJSON, Point, Polygon } from 'geojson'
 import axios from 'axios'
 import { Loading } from 'quasar'
 import circle from '@turf/circle'
@@ -37,7 +37,7 @@ export function useRestaurants() {
   async function getRestaurantsWithin(
     point: Point,
     radiusMetres: number
-  ): Promise<Feature[]> {
+  ): Promise<Feature<Polygon>[]> {
     const theCircle = circle(point, radiusMetres, {
       units: 'meters',
     })
@@ -48,7 +48,7 @@ export function useRestaurants() {
       keys: restaurantIds,
     })
 
-    return restaurants.rows.map((row) => row.doc! as Feature)
+    return restaurants.rows.map((row) => row.doc! as Feature<Polygon>)
   }
 
   return { loadRestaurants, getRestaurantsWithin }

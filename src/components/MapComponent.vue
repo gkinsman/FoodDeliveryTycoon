@@ -1,5 +1,6 @@
 ﻿<template>
   <QPage>
+    <canvas id="game"></canvas>
     <div class="row">
       <div class="col-md-8 map-container">
         <div id="map"></div>
@@ -23,7 +24,7 @@
                 :map="theMap()"
               ></HubInfoComponent>
               <QItemSection>
-                <div v-if="!selectedHub">No currently selected hub</div>
+                <div v-if="!state.selectedHub">No currently selected hub</div>
               </QItemSection>
             </QItem>
             <QItem>
@@ -47,12 +48,15 @@ import {
   zoomToFeature,
   selectHub,
 } from '../Features/map-utils'
-import { Hub, useGameState } from '../Features/game-state'
+import { useGameState } from '../Features/game-state'
 import centerOfMass from '@turf/center-of-mass'
-import { useRestaurants } from '../Features/restaurants'
+import { useRestaurants } from '../Features/data/restaurants'
 import HubInfoComponent from './HubInfoComponent.vue'
 import GameStateComponent from './GameStateComponent.vue'
-import { Feature } from 'geojson'
+import { useGame } from '../Features/game/game'
+import { Hub } from '../Features/hub'
+import { Feature, Polygon } from 'geojson'
+import { featureCollection } from '@turf/turf'
 
 const mapboxToken =
   'pk.eyJ1IjoiZ2tpbnNtYW4iLCJhIjoiY2wweWJ4andpMHA0YjNlc2RwaXRheWVkeiJ9.t5YbtNYLO2rZfinEf1Qy7g'
@@ -83,7 +87,7 @@ onMounted(() => {
     zoom: 15,
   })
 
-  theMap().on('load', () => {
+  theMap().on('load', async () => {
     map.value?.addLayer({
       id: 'building-hover',
       type: 'fill',
@@ -160,6 +164,10 @@ onMounted(() => {
     theMap().on('click', (clicked) => {
       maybeSelectHub(clicked)
     })
+
+    const { startEngine } = useGame()
+
+    await startEngine(theMap())
   })
 
   async function maybeSelectHub(clicked: mapboxgl.MapMouseEvent) {
@@ -178,19 +186,25 @@ onMounted(() => {
     const { getRestaurantsWithin } = useRestaurants()
     const restaurantFeatures = await getRestaurantsWithin(center, 1000)
 
+    const featureColl = featureCollection(restaurantFeatures)
+
     const hubName = Hub.getName(hub.id)
 
-    const { state, selectHub } = useGameState()
     const isOwned = state.value.ownedHubs.some((hub) => hub.name === hubName)
 
     let foundHub = state.value.discoveredHubs.get(hubName)
     if (!foundHub) {
-      foundHub = new Hub(hubName, restaurantFeatures.length, hub, isOwned)
+      foundHub = new Hub(
+        hubName,
+        restaurantFeatures.length,
+        hub as Feature<Polygon>,
+        isOwned,
+        featureColl
+      )
       state.value.discoveredHubs.set(hubName, foundHub)
     }
 
-    selectHub(foundHub!)
-    await selectHub(theMap(), foundHub)
+    await selectHub(theMap(), foundHub!)
   }
 })
 </script>

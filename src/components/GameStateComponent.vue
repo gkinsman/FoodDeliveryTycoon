@@ -4,6 +4,7 @@
 
     <QTabs v-model="tab" active-color="primary" indicator-color="primary">
       <QTab name="ownedhubs" label="Owned Hubs"></QTab>
+      <QTab name="riders" label="Riders"></QTab>
     </QTabs>
 
     <QSeparator />
@@ -20,6 +21,15 @@
           v-for="hub in state.ownedHubs"
         ></HubInfoComponent>
       </QTabPanel>
+
+      <QTabPanel name="riders">
+        <div class="text-h6">Riders</div>
+
+        <HubRidersComponent
+          :hubs="state.ownedHubs"
+          :map="map"
+        ></HubRidersComponent>
+      </QTabPanel>
     </QTabPanels>
   </QCard>
 </template>
@@ -27,6 +37,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import HubInfoComponent from './HubInfoComponent.vue'
+import HubRidersComponent from './HubRidersComponent.vue'
 import { useGameState } from '../Features/game-state'
 import mapboxgl from 'mapbox-gl'
 

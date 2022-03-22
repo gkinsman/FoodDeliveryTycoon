@@ -1,9 +1,10 @@
-﻿import { Feature, FeatureCollection, GeoJSON, Point } from 'geojson'
+﻿import { Feature, FeatureCollection, GeoJSON, Point, Polygon } from 'geojson'
 import axios from 'axios'
 import { Loading } from 'quasar'
 import circle from '@turf/circle'
 import { shallowRef } from 'vue'
-import { point } from '@turf/turf'
+import { randomElement } from '../../util'
+import { center } from '@turf/turf'
 
 let db = shallowRef(new PouchDB('houses'))
 let geo = shallowRef(db.value.geospatial())
@@ -33,23 +34,22 @@ export function useHouses() {
     Loading.hide()
   }
 
-  async function getRandomHouseNearRestaurant(restaurant: Point) {
-    const theCircle = circle(restaurant, 200, {
+  async function getRandomHouseNearRestaurant(
+    restaurant: Feature<Polygon>
+  ): Promise<Feature<Point>> {
+    const restaurantCenter = center(restaurant.geometry)
+    const selectionCircle = circle(restaurantCenter, 300, {
       units: 'meters',
     })
-    const houseIds = await geo.value.within(theCircle)
+    const houseIds = await geo.value.within(selectionCircle)
 
     const houses = await db.value.allDocs<GeoJSON>({
       include_docs: true,
       keys: houseIds,
-      limit: 1,
+      limit: 50,
     })
 
-    const houseResult = houses.rows.find((x) => x) || null
-    if (!houseResult) return
-    const house = houseResult.doc as Feature
-
-    return house
+    return randomElement(houses.rows).doc as Feature<Point>
   }
 
   return {

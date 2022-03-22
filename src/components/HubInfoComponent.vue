@@ -28,10 +28,11 @@
 </template>
 
 <script setup lang="ts">
-import { Hub, useGameState } from '../Features/game-state'
+import { useGameState } from '../Features/game-state'
 import { computed } from 'vue'
 import { selectHub } from '../Features/map-utils'
 import mapboxgl from 'mapbox-gl'
+import { Hub } from '../Features/hub'
 
 const props = defineProps<{
   hub: Hub

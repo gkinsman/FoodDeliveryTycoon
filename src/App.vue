@@ -24,13 +24,10 @@
 <script setup lang="ts">
 import MapComponent from './components/MapComponent.vue'
 import { onMounted } from 'vue'
-import { useRestaurants } from './Features/restaurants'
-import { useHouses } from './Features/houses'
-import { useEngine } from './engine'
+import { useRestaurants } from './Features/data/restaurants'
+import { useHouses } from './Features/data/houses'
 
 onMounted(async () => {
-  const { startEngine } = useEngine()
-
   const { loadRestaurants } = useRestaurants()
   const { loadHouses } = useHouses()
 

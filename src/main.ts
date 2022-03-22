@@ -3,9 +3,11 @@ import { Quasar } from 'quasar'
 import App from './App.vue'
 import 'events'
 
+// @ts-ignore
 PouchDB.plugin(PouchDBGeospatial)
 
 // Import icon libraries
+import '@quasar/extras/material-icons/material-icons.css'
 import '@quasar/extras/material-icons-outlined/material-icons-outlined.css'
 import '@quasar/extras/roboto-font/roboto-font.css'
 
