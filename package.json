@@ -9,8 +9,15 @@
   },
   "dependencies": {
     "@quasar/extras": "^1.13.3",
+    "@turf/turf": "^6.5.0",
+    "@types/geojson": "^7946.0.8",
+    "@types/pouchdb": "^6.4.0",
+    "axios": "^0.26.1",
     "core-js": "^3.8.3",
+    "events": "^3.3.0",
+    "excalibur": "^0.25.3",
     "mapbox-gl": "^2.7.1",
+    "pouchdb-browser": "^7.2.2",
     "quasar": "^2.6.1",
     "vue": "^3.2.25"
   },

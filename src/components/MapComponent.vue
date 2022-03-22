@@ -10,20 +10,24 @@
             <QCheckbox
               :model-value="getLayerVisibility(layer)"
               :label="layer"
-              @update:model-value="visible => checkboxChange(layer, visible)"
+              @update:model-value="(visible) => checkboxChange(layer, visible)"
             ></QCheckbox>
           </QItem>
         </QList>
         <div class="q-pb-md">
-          <QList bordered separator>
+          <QList separator>
             <QItem>
-              <div>{{ bounds }}</div>
+              <HubInfoComponent
+                v-if="state.selectedHub"
+                :hub="state.selectedHub"
+                :map="theMap()"
+              ></HubInfoComponent>
+              <QItemSection>
+                <div v-if="!selectedHub">No currently selected hub</div>
+              </QItemSection>
             </QItem>
             <QItem>
-              <div>{{ selectedFeature }}</div>
-            </QItem>
-            <QItem>
-              <div>{{ mouseOver }}</div>
+              <GameStateComponent :map="theMap()"></GameStateComponent>
             </QItem>
           </QList>
         </div>
@@ -33,110 +37,162 @@
 </template>
 
 <script setup lang="ts">
-import "mapbox-gl/dist/mapbox-gl.css";
-import { computed, onMounted, Ref, ref, ShallowRef, shallowRef } from "vue";
-import mapboxgl, { LngLat, LngLatBounds } from "mapbox-gl";
-import { useLayers } from "./layers";
+import 'mapbox-gl/dist/mapbox-gl.css'
+import { computed, onMounted, Ref, ref, ShallowRef, shallowRef } from 'vue'
+import mapboxgl, { LngLat, LngLatBounds } from 'mapbox-gl'
+import { useLayers } from '../Features/layers'
+import {
+  findFirstSymbolLayerId,
+  showRestaurants,
+  zoomToFeature,
+  selectHub,
+} from '../Features/map-utils'
+import { Hub, useGameState } from '../Features/game-state'
+import centerOfMass from '@turf/center-of-mass'
+import { useRestaurants } from '../Features/restaurants'
+import HubInfoComponent from './HubInfoComponent.vue'
+import GameStateComponent from './GameStateComponent.vue'
+import { Feature } from 'geojson'
 
 const mapboxToken =
-  "pk.eyJ1IjoiZ2tpbnNtYW4iLCJhIjoiY2wweWJ4andpMHA0YjNlc2RwaXRheWVkeiJ9.t5YbtNYLO2rZfinEf1Qy7g";
+  'pk.eyJ1IjoiZ2tpbnNtYW4iLCJhIjoiY2wweWJ4andpMHA0YjNlc2RwaXRheWVkeiJ9.t5YbtNYLO2rZfinEf1Qy7g'
 
-let map: mapboxgl.Map | null = null;
+let map: ShallowRef<mapboxgl.Map | null> = shallowRef(null)
 
-const bounds = ref<LngLatBounds | null>(null);
-const mouseOver = ref<any>(null);
-const selectedFeature = shallowRef<any>(null);
+const mouseOver = ref<any>(null)
 
-const {getLayers, setLayerVisibility, getLayerVisibility} = useLayers();
+const { getLayers, setLayerVisibility, getLayerVisibility } = useLayers()
 
-const checkboxChange = (layer: string, visible: boolean) =>  {
-  setLayerVisibility(map!, layer, visible);
+const { state } = useGameState()
+
+const checkboxChange = (layer: string, visible: boolean) => {
+  setLayerVisibility(map.value!, layer, visible)
+}
+
+function theMap(): mapboxgl.Map {
+  return map.value!
 }
 
 onMounted(() => {
-  map = new mapboxgl.Map({
-    container: "map",
+  map.value = new mapboxgl.Map({
+    container: 'map',
     accessToken: mapboxToken,
-    style: "mapbox://styles/mapbox/streets-v11",
+    style: 'mapbox://styles/mapbox/streets-v11',
     center: [-0.1, 51.527],
+    minZoom: 10,
     zoom: 15,
-  });
+  })
 
-  map.on("load", () => {
-    map?.addLayer({
-      id: "building-hover",
-      type: "fill",
-      source: "composite",
-      "source-layer": "building",
+  theMap().on('load', () => {
+    map.value?.addLayer({
+      id: 'building-hover',
+      type: 'fill',
+      filter: ['all', ['!=', 'type', 'garage'], ['!=', 'type', 'parking']],
+      source: 'composite',
+      'source-layer': 'building',
       layout: {},
       paint: {
-        "fill-color": "#fb6100",
-        "fill-opacity": [
-          "case",
-          ["boolean", ["feature-state", "hover"], false],
+        'fill-color': '#bdbbb8',
+        'fill-opacity': [
+          'case',
+          ['boolean', ['feature-state', 'hover'], false],
           0.8,
           0.0,
         ],
       },
-    });
+    })
 
-    map?.addLayer({
-      id: "commercial-buildings",
-      filter: ["==", "type", "commercial"],
-      type: "fill",
-      source: "composite",
-      "source-layer": "building",
-      layout: {},
-      paint: {
-        "fill-color": "#fb6100",
+    theMap().addLayer(
+      {
+        id: 'hubs',
+        filter: ['any', ['==', 'type', 'garage'], ['==', 'type', 'parking']],
+        type: 'fill',
+        source: 'composite',
+        'source-layer': 'building',
+        layout: {},
+        paint: {
+          'fill-color': '#fb6100',
+          'fill-opacity': [
+            'case',
+            ['boolean', ['feature-state', 'hover'], false],
+            0.8,
+            0.6,
+          ],
+        },
       },
-    });
-  });
-
-  map.on("move", () => {
-    bounds.value = map!.getBounds();
-  });
-
-  const previouslyHoveredFeature = shallowRef<any>(null);
-
-  map.on("mousemove", (hovered) => {
-    const features = map?.queryRenderedFeatures(hovered.point);
-
-    const building = features?.find((f) => f.layer.id === "building");
-
-    if (!building || !building.id) return;
-
-    if (
-      previouslyHoveredFeature.value &&
-      previouslyHoveredFeature.value.id === building.id
+      findFirstSymbolLayerId(map.value!)
     )
-      return;
-    if (previouslyHoveredFeature.value) {
-      map?.setFeatureState(previouslyHoveredFeature.value, { hover: false });
+
+    const previouslyHoveredFeature = shallowRef<any>(null)
+
+    theMap().on('mousemove', (hovered) => {
+      const hubFeatures = map.value?.queryRenderedFeatures(hovered.point, {
+        layers: ['building'],
+        filter: ['any', ['==', 'type', 'garage'], ['==', 'type', 'parking']],
+      })
+      if (!!hubFeatures?.length) theMap().getCanvas().style.cursor = 'pointer'
+      else map.value!.getCanvas().style.cursor = ''
+
+      const features = map.value!.queryRenderedFeatures(hovered.point)
+
+      const building = features?.find((f) => f.layer.id === 'building')
+
+      if (!building || !building.id) return
+
+      if (
+        previouslyHoveredFeature.value &&
+        previouslyHoveredFeature.value.id === building.id
+      )
+        return
+      if (previouslyHoveredFeature.value) {
+        map.value!.setFeatureState(previouslyHoveredFeature.value, {
+          hover: false,
+        })
+      }
+      theMap().setFeatureState(building, {
+        hover: true,
+      })
+
+      previouslyHoveredFeature.value = building
+      mouseOver.value = JSON.stringify(building)
+    })
+
+    theMap().on('click', (clicked) => {
+      maybeSelectHub(clicked)
+    })
+  })
+
+  async function maybeSelectHub(clicked: mapboxgl.MapMouseEvent) {
+    const features = theMap().queryRenderedFeatures(clicked.point)
+
+    const hub = features?.find(
+      (f) =>
+        f.layer.id === 'building' &&
+        ['garage', 'parking'].indexOf(f.properties!['type']) >= 0
+    )
+    // No hub found
+    if (!hub || !hub.id) return
+
+    const center = centerOfMass(hub).geometry
+
+    const { getRestaurantsWithin } = useRestaurants()
+    const restaurantFeatures = await getRestaurantsWithin(center, 1000)
+
+    const hubName = Hub.getName(hub.id)
+
+    const { state, selectHub } = useGameState()
+    const isOwned = state.value.ownedHubs.some((hub) => hub.name === hubName)
+
+    let foundHub = state.value.discoveredHubs.get(hubName)
+    if (!foundHub) {
+      foundHub = new Hub(hubName, restaurantFeatures.length, hub, isOwned)
+      state.value.discoveredHubs.set(hubName, foundHub)
     }
-    map?.setFeatureState(building, {
-      hover: true,
-    });
 
-    previouslyHoveredFeature.value = building;
-    mouseOver.value = JSON.stringify(building);
-  });
-
-  map.on("click", (clicked) => {
-    const features = map?.queryRenderedFeatures(clicked.point);
-
-    const building = features?.find((f) => f.layer.id === "building");
-    if (!building || !building.id) return;
-
-    selectedFeature.value = building;
-  });
-});
-const zoom = ref(15);
-//        :url="`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`"
-
-const log = ({ args }: { args: any }) => console.log(args);
-
-const center = ref([47.41322, -1.219482]);
+    selectHub(foundHub!)
+    await selectHub(theMap(), foundHub)
+  }
+})
 </script>
 
 <style lang="scss">

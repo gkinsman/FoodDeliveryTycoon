@@ -1,0 +1,42 @@
+﻿<template>
+  <QCard class="col">
+    <div class="q-px-md text-h6">${{ state.money }}</div>
+
+    <QTabs v-model="tab" active-color="primary" indicator-color="primary">
+      <QTab name="ownedhubs" label="Owned Hubs"></QTab>
+    </QTabs>
+
+    <QSeparator />
+    <QTabPanels v-model="tab">
+      <QTabPanel name="ownedhubs">
+        <div class="text-h6">Owned Hubs</div>
+
+        <div v-if="!state.ownedHubs.length">You don't own any hubs!</div>
+
+        <HubInfoComponent
+          :hub="hub"
+          :key="hub.name"
+          :map="map"
+          v-for="hub in state.ownedHubs"
+        ></HubInfoComponent>
+      </QTabPanel>
+    </QTabPanels>
+  </QCard>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import HubInfoComponent from './HubInfoComponent.vue'
+import { useGameState } from '../Features/game-state'
+import mapboxgl from 'mapbox-gl'
+
+const props = defineProps<{
+  map: mapboxgl.Map
+}>()
+
+const tab = ref('ownedhubs')
+
+const { state } = useGameState()
+</script>
+
+<style scoped></style>
