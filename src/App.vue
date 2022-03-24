@@ -4,9 +4,9 @@
       <q-toolbar>
         <q-toolbar-title>
           <q-avatar square>
-            <img src="./assets/just-eat.png" />
+            <img src="logo.png" />
           </q-avatar>
-          JET Tycoon
+          Food Delivery Tycoon
         </q-toolbar-title>
       </q-toolbar>
     </q-header>
@@ -14,10 +14,6 @@
     <q-page-container>
       <MapComponent />
     </q-page-container>
-
-    <q-footer elevated class="bg-grey-8 text-white">
-      <q-toolbar> v0.1 </q-toolbar>
-    </q-footer>
   </q-layout>
 </template>
 
@@ -31,8 +27,7 @@ onMounted(async () => {
   const { loadRestaurants } = useRestaurants()
   const { loadHouses } = useHouses()
 
-  await loadRestaurants()
-  await loadHouses()
+  await Promise.all([loadRestaurants(), loadHouses()])
 })
 </script>
 

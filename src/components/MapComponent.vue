@@ -6,30 +6,22 @@
         <div id="map"></div>
       </div>
       <div class="col-md-4 offset-md-8 q-pa-md">
-        <QList>
-          <QItem v-for="layer in getLayers()">
-            <QCheckbox
-              :model-value="getLayerVisibility(layer)"
-              :label="layer"
-              @update:model-value="(visible) => checkboxChange(layer, visible)"
-            ></QCheckbox>
-          </QItem>
-        </QList>
         <div class="q-pb-md">
           <QList separator>
             <QItem>
               <HubInfoComponent
-                v-if="state.selectedHub"
-                :hub="state.selectedHub"
+                v-if="selectedHub"
+                :hub="selectedHub"
                 :map="theMap()"
               ></HubInfoComponent>
               <QItemSection>
-                <div v-if="!state.selectedHub">No currently selected hub</div>
+                <div v-if="!selectedHub">No currently selected hub</div>
               </QItemSection>
             </QItem>
             <QItem>
               <GameStateComponent :map="theMap()"></GameStateComponent>
             </QItem>
+            <QItem> <GameLogComponent></GameLogComponent></QItem>
           </QList>
         </div>
       </div>
@@ -57,9 +49,9 @@ import { useGame } from '../Features/game/game'
 import { Hub } from '../Features/hub'
 import { Feature, Polygon } from 'geojson'
 import { featureCollection } from '@turf/turf'
-
-const mapboxToken =
-  'pk.eyJ1IjoiZ2tpbnNtYW4iLCJhIjoiY2wweWJ4andpMHA0YjNlc2RwaXRheWVkeiJ9.t5YbtNYLO2rZfinEf1Qy7g'
+import { useOrders } from '../Features/orders'
+import { useMapbox } from '../Features/data/mapbox'
+import GameLogComponent from './GameLogComponent.vue'
 
 let map: ShallowRef<mapboxgl.Map | null> = shallowRef(null)
 
@@ -67,7 +59,7 @@ const mouseOver = ref<any>(null)
 
 const { getLayers, setLayerVisibility, getLayerVisibility } = useLayers()
 
-const { state } = useGameState()
+const { selectedHub } = useGameState()
 
 const checkboxChange = (layer: string, visible: boolean) => {
   setLayerVisibility(map.value!, layer, visible)
@@ -78,6 +70,8 @@ function theMap(): mapboxgl.Map {
 }
 
 onMounted(() => {
+  const { mapboxToken } = useMapbox()
+
   map.value = new mapboxgl.Map({
     container: 'map',
     accessToken: mapboxToken,
@@ -85,6 +79,11 @@ onMounted(() => {
     center: [-0.1, 51.527],
     minZoom: 10,
     zoom: 15,
+  })
+
+  theMap().loadImage('rider_small.png', (err, img) => {
+    if (err || !img) throw err || "Couldn't load rider image"
+    theMap().addImage('rider', img)
   })
 
   theMap().on('load', async () => {
@@ -166,11 +165,15 @@ onMounted(() => {
     })
 
     const { startEngine } = useGame()
+    const { init } = useOrders()
 
     await startEngine(theMap())
+    init(theMap())
   })
 
   async function maybeSelectHub(clicked: mapboxgl.MapMouseEvent) {
+    const { ownedHubs, discoveredHubs } = useGameState()
+
     const features = theMap().queryRenderedFeatures(clicked.point)
 
     const hub = features?.find(
@@ -190,9 +193,9 @@ onMounted(() => {
 
     const hubName = Hub.getName(hub.id)
 
-    const isOwned = state.value.ownedHubs.some((hub) => hub.name === hubName)
+    const isOwned = ownedHubs.some((hub) => hub.name === hubName)
 
-    let foundHub = state.value.discoveredHubs.get(hubName)
+    let foundHub = discoveredHubs.get(hubName)
     if (!foundHub) {
       foundHub = new Hub(
         hubName,
@@ -201,7 +204,7 @@ onMounted(() => {
         isOwned,
         featureColl
       )
-      state.value.discoveredHubs.set(hubName, foundHub)
+      discoveredHubs.set(hubName, foundHub)
     }
 
     await selectHub(theMap(), foundHub!)
@@ -213,7 +216,7 @@ onMounted(() => {
 .map-container {
   position: fixed;
   top: 50px;
-  bottom: 50px;
+  bottom: 0;
   left: 0;
 
   & > * {
@@ -222,5 +225,13 @@ onMounted(() => {
     width: 100%;
     height: 100%;
   }
+}
+
+.marker {
+  background-image: url('order.png');
+  background-size: cover;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
 }
 </style>

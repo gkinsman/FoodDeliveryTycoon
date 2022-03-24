@@ -8,10 +8,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@mapbox/mapbox-sdk": "^0.13.3",
+    "@mapbox/polyline": "^1.1.1",
     "@quasar/extras": "^1.13.3",
     "@turf/turf": "^6.5.0",
     "@types/geojson": "^7946.0.8",
+    "@types/mapbox__mapbox-sdk": "^0.13.2",
     "@types/pouchdb": "^6.4.0",
+    "@types/uuid": "^8.3.4",
     "axios": "^0.26.1",
     "core-js": "^3.8.3",
     "events": "^3.3.0",
@@ -19,6 +23,8 @@
     "mapbox-gl": "^2.7.1",
     "pouchdb-browser": "^7.2.2",
     "quasar": "^2.6.1",
+    "uri-template": "^2.0.0",
+    "uuid": "^8.3.2",
     "vue": "^3.2.25"
   },
   "devDependencies": {

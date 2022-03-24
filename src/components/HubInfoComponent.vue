@@ -1,5 +1,10 @@
 ﻿<template>
-  <QItem clickable @click="selectHub(props.map, hub)">
+  <QItem
+    clickable
+    class="items-center"
+    @click="selectHub(props.map, hub)"
+    :class="{ 'no-drivers': !hub.hasRidersAvailable && hub.isOwned }"
+  >
     <QItemSection side top>
       <QBtn
         v-if="!hub.isOwned"
@@ -23,6 +28,9 @@
         </span>
         available restaurants
       </QItemLabel>
+      <QItemLabel v-if="!hub.hasRidersAvailable"
+        >No riders available!</QItemLabel
+      >
     </QItemSection>
   </QItem>
 </template>
@@ -39,11 +47,20 @@ const props = defineProps<{
   map: mapboxgl.Map
 }>()
 
-const { buyHub, sellHub, state } = useGameState()
+const { buyHub, sellHub, balance } = useGameState()
 
 const canBuy = computed(() => {
-  return state.value.money >= props.hub.buyPrice
+  return balance.value >= props.hub.buyPrice
 })
 </script>
 
-<style scoped></style>
+<style scoped lang="scss">
+.no-drivers {
+  color: white;
+  background: red;
+
+  .q-btn {
+    background: white;
+  }
+}
+</style>

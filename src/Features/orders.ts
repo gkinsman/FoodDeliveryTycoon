@@ -1,17 +1,25 @@
-﻿import { Feature, Point, Polygon } from 'geojson'
+﻿import { Feature, FeatureCollection, Point, Polygon } from 'geojson'
 import { RiderEntity } from './riders'
 import { Hub } from './hub'
 import { useHouses } from './data/houses'
 import { randomElement, randomInteger } from '../util'
-import { Random } from 'excalibur'
 import mapboxgl from 'mapbox-gl'
+import { v4 as uuidv4 } from 'uuid'
+import { useGameState } from './game-state'
+import { config } from './game/config'
+import { useGameLog } from './game-log'
+import { center } from '@turf/turf'
 
 export class Order {
+  public id: string
+
   constructor(
-    destination: Feature<Point>,
-    restaurant: Feature<Polygon>,
-    value: number
+    public hub: Hub,
+    public destination: Feature<Point>,
+    public restaurant: Feature<Polygon>,
+    public value: number
   ) {
+    this.id = uuidv4()
     this.rider = null
   }
 
@@ -24,10 +32,14 @@ export class Order {
 
 interface OrderState {
   map: mapboxgl.Map | null
+  orders: Map<string, mapboxgl.Marker>
+  unassignedOrders: Order[]
 }
 
 const state: OrderState = {
   map: null,
+  orders: new Map<string, mapboxgl.Marker>(),
+  unassignedOrders: [],
 }
 
 export function useOrders() {
@@ -37,19 +49,55 @@ export function useOrders() {
 
   async function generateOrder(hub: Hub): Promise<Order> {
     const { getRandomHouseNearRestaurant } = useHouses()
+    const { write } = useGameLog()
 
     const value = randomInteger(10, 50)
-    const randomRestaurant = randomElement(hub.restaurants.features)
-    const randomDestination = await getRandomHouseNearRestaurant(
-      randomRestaurant
-    )
+    const restaurant = randomElement(hub.restaurants.features)
+    const destination = await getRandomHouseNearRestaurant(restaurant)
 
-    return new Order(randomDestination, randomRestaurant, value)
+    const newOrder = new Order(hub, destination, restaurant, value)
+
+    const element = document.createElement('div')
+    element.className = 'marker'
+
+    let destinationGeometry: Feature<Point>
+    if (destination.geometry.type !== 'Point') {
+      destinationGeometry = center(destination.geometry)
+    } else {
+      destinationGeometry = destination
+    }
+
+    const marker = new mapboxgl.Marker(element)
+      .setLngLat(destinationGeometry.geometry.coordinates as [number, number])
+      .addTo(state.map!)
+
+    state.orders.set(newOrder.id, marker)
+    state.unassignedOrders.push(newOrder)
+
+    write(`New order for restaurant ${restaurant.properties!['name']}!`)
+
+    return newOrder
+  }
+
+  function completeOrder(order: Order) {
+    const { addMoney } = useGameState()
+
+    const marker = state.orders.get(order.id)
+    if (marker) {
+      marker.remove()
+      state.orders.delete(order.id)
+    }
+
+    const commission = config.commission * order.value
+    addMoney(commission, 'commission')
   }
 
   // async function
 
   return {
+    state,
+    init,
     generateOrder,
+    completeOrder,
   }
 }

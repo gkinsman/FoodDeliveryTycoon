@@ -1,4 +1,11 @@
-﻿import { Feature, FeatureCollection, GeoJSON, Point, Polygon } from 'geojson'
+﻿import {
+  Feature,
+  FeatureCollection,
+  GeoJSON,
+  Geometry,
+  Point,
+  Polygon,
+} from 'geojson'
 import axios from 'axios'
 import { Loading } from 'quasar'
 import circle from '@turf/circle'
@@ -38,7 +45,7 @@ export function useHouses() {
     restaurant: Feature<Polygon>
   ): Promise<Feature<Point>> {
     const restaurantCenter = center(restaurant.geometry)
-    const selectionCircle = circle(restaurantCenter, 300, {
+    const selectionCircle = circle(restaurantCenter, 600, {
       units: 'meters',
     })
     const houseIds = await geo.value.within(selectionCircle)
@@ -49,7 +56,13 @@ export function useHouses() {
       limit: 50,
     })
 
-    return randomElement(houses.rows).doc as Feature<Point>
+    let house = randomElement(houses.rows).doc as Feature
+
+    if (house.geometry.type == 'Polygon') {
+      house = center(house.geometry)
+    }
+
+    return house as Feature<Point>
   }
 
   return {

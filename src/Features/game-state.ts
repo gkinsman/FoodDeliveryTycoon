@@ -1,5 +1,6 @@
-﻿import { Ref, ref } from 'vue'
+﻿import { computed, Ref, ref } from 'vue'
 import { Hub } from './hub'
+import { useGameLog } from './game-log'
 
 export interface GameState {
   discoveredHubs: Map<string, Hub>
@@ -16,6 +17,8 @@ const state: Ref<GameState> = ref({
 })
 
 export function useGameState() {
+  const { write } = useGameLog()
+
   function buyHub(hub: Hub) {
     if (hub.isOwned) {
       throw 'Hub is already owned'
@@ -41,14 +44,33 @@ export function useGameState() {
     )
   }
 
+  function roundMoney(amount: number) {
+    return Math.round(amount * 100) / 100
+  }
+
   function selectHub(hub: Hub) {
     state.value.selectedHub = hub
   }
 
+  function addMoney(amount: number, reason: string) {
+    write(`You made some money! ${amount} from ${reason}`)
+    state.value.money = roundMoney(state.value.money + amount)
+  }
+
+  function removeMoney(amount: number, reason: string) {
+    write(`You spent some money! ${amount} for ${reason}`)
+    state.value.money = roundMoney(state.value.money - amount)
+  }
+
   return {
-    state,
+    balance: computed(() => state.value.money),
+    ownedHubs: state.value.ownedHubs,
+    discoveredHubs: state.value.discoveredHubs,
     buyHub,
     sellHub,
     selectHub,
+    selectedHub: computed(() => state.value.selectedHub),
+    addMoney,
+    removeMoney,
   }
 }

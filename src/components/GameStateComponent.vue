@@ -1,6 +1,6 @@
 ﻿<template>
   <QCard class="col">
-    <div class="q-px-md text-h6">${{ state.money }}</div>
+    <div class="q-px-md text-h6">${{ balance }}</div>
 
     <QTabs v-model="tab" active-color="primary" indicator-color="primary">
       <QTab name="ownedhubs" label="Owned Hubs"></QTab>
@@ -12,23 +12,20 @@
       <QTabPanel name="ownedhubs">
         <div class="text-h6">Owned Hubs</div>
 
-        <div v-if="!state.ownedHubs.length">You don't own any hubs!</div>
+        <div v-if="!ownedHubs.length">You don't own any hubs!</div>
 
         <HubInfoComponent
           :hub="hub"
           :key="hub.name"
           :map="map"
-          v-for="hub in state.ownedHubs"
+          v-for="hub in ownedHubs"
         ></HubInfoComponent>
       </QTabPanel>
 
       <QTabPanel name="riders">
         <div class="text-h6">Riders</div>
 
-        <HubRidersComponent
-          :hubs="state.ownedHubs"
-          :map="map"
-        ></HubRidersComponent>
+        <HubRidersComponent :hubs="ownedHubs" :map="map"></HubRidersComponent>
       </QTabPanel>
     </QTabPanels>
   </QCard>
@@ -47,7 +44,7 @@ const props = defineProps<{
 
 const tab = ref('ownedhubs')
 
-const { state } = useGameState()
+const { balance, ownedHubs } = useGameState()
 </script>
 
 <style scoped></style>

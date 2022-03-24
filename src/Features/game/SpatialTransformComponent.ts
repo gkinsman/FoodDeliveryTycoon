@@ -30,7 +30,7 @@ export class SpatialTransformComponent extends ex.Component<'spatialTransform'> 
       source: this._sourceId,
       type: 'symbol',
       layout: {
-        'icon-image': 'airport-15',
+        'icon-image': 'rider',
         'icon-rotate': ['get', 'bearing'],
         'icon-rotation-alignment': 'map',
         'icon-allow-overlap': true,

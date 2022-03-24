@@ -4,6 +4,8 @@ import * as ex from 'excalibur'
 import mapboxgl from 'mapbox-gl'
 import { SpatialSystem } from './SpatialSystem'
 
+import { init } from './events'
+
 interface EngineState {
   engine: ShallowRef<ex.Engine | null>
   scene: ShallowRef<MapScene | null>
@@ -30,6 +32,8 @@ export function useGame() {
 
     await state.engine.value.start()
     state.engine.value.goToScene('map')
+
+    init()
   }
 
   return {

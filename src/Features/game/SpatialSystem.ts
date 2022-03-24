@@ -4,6 +4,9 @@ import { WaypointsComponent } from './WaypointsComponent'
 import { Position } from 'geojson'
 import { distance, rhumbBearing, rhumbDestination } from '@turf/turf'
 import { config } from './config'
+import { RiderEntity } from '../riders'
+import { useGameState } from '../game-state'
+import { useOrders } from '../orders'
 
 export class SpatialSystem extends ex.System<
   SpatialTransformComponent | WaypointsComponent
@@ -20,7 +23,10 @@ export class SpatialSystem extends ex.System<
     })
   }
 
-  public update(entities: ex.Entity[], delta: number) {
+  public update(entities: RiderEntity[], delta: number) {
+    const { state } = useGameState()
+    const { completeOrder } = useOrders()
+
     for (let entity of entities) {
       const transformComponent = entity.get(SpatialTransformComponent)!
       const waypointComponent = entity.get(WaypointsComponent)!
@@ -41,22 +47,35 @@ export class SpatialSystem extends ex.System<
       )
 
       if (distanceToNext < 5) {
-        waypointComponent.waypoints.geometry.coordinates.unshift()
+        waypointComponent.waypoints.geometry.coordinates.shift()
         nextWaypoint = waypointComponent.waypoints.geometry.coordinates[0]
+
+        if (!nextWaypoint) {
+          const completedOrder = entity.finishRoute()
+          const commission = completedOrder.value * config.commission
+
+          completeOrder(completedOrder)
+
+          continue
+        }
+
         distanceToNext = SpatialSystem.distanceToWaypoint(
           transformComponent.position.geometry.coordinates,
           nextWaypoint
         )
       }
 
-      const velocity = transformComponent.velocity
+      const kmh = transformComponent.velocity
       const bearing = rhumbBearing(transformComponent.position, nextWaypoint)
-      const distanceToTravel = this.distanceTravelled(delta, velocity)
+      const distanceToTravel = this.metersTravelled(delta, kmh)
 
       const newPosition = rhumbDestination(
         transformComponent.position,
         distanceToTravel,
-        bearing
+        bearing,
+        {
+          units: 'meters',
+        }
       )
 
       newPosition.properties!['bearing'] = bearing
@@ -65,8 +84,9 @@ export class SpatialSystem extends ex.System<
     }
   }
 
-  distanceTravelled(delta: number, velocity: number) {
-    const hoursElapsed = delta / config.msPerHour
-    return hoursElapsed * velocity
+  metersTravelled(delta: number, kilometersPerHour: number): number {
+    const metersTravelled = delta * 0.1 // 15km/h assuming 1 minute = 1 hour game time
+
+    return metersTravelled
   }
 }
