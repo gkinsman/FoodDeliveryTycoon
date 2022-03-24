@@ -5,7 +5,6 @@ import { Position } from 'geojson'
 import { distance, rhumbBearing, rhumbDestination } from '@turf/turf'
 import { config } from './config'
 import { RiderEntity } from '../riders'
-import { useGameState } from '../game-state'
 import { useOrders } from '../orders'
 
 export class SpatialSystem extends ex.System<
@@ -24,7 +23,6 @@ export class SpatialSystem extends ex.System<
   }
 
   public update(entities: RiderEntity[], delta: number) {
-    const { state } = useGameState()
     const { completeOrder } = useOrders()
 
     for (let entity of entities) {

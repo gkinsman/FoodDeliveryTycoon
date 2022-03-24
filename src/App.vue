@@ -4,7 +4,7 @@
       <q-toolbar>
         <q-toolbar-title>
           <q-avatar square>
-            <img src="logo.png" />
+            <img src="./assets/logo.png" />
           </q-avatar>
           Food Delivery Tycoon
         </q-toolbar-title>
