@@ -245,7 +245,7 @@ onMounted(() => {
 }
 
 .marker {
-  background-image: url('order.png');
+  background-image: url('/order.png');
   background-size: cover;
   width: 20px;
   height: 20px;
