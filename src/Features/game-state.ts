@@ -12,7 +12,7 @@ export interface GameState {
 const state: Ref<GameState> = ref({
   discoveredHubs: new Map(),
   ownedHubs: [],
-  money: 3000,
+  money: 1500,
   selectedHub: null,
 })
 
