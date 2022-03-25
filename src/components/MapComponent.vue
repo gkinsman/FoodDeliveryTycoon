@@ -8,6 +8,23 @@
       <div class="col-md-4 offset-md-8 q-pa-md">
         <div class="q-pb-md">
           <QList separator>
+            <QExpansionItem font-weight-bold label="How To Play">
+              <ol>
+                <li>Find a hub on the map! Hint: they're orange.</li>
+                <li>
+                  Click on the hub so you can see how many restaurants it has.
+                  This might take a few seconds the first time.
+                </li>
+                <li>
+                  Buy it if you like the look of it! As soon as you buy it, the
+                  orders will start coming in.
+                </li>
+                <li>
+                  Make sure you have enough riders in the hub to support the
+                  orders!
+                </li>
+              </ol>
+            </QExpansionItem>
             <QItem>
               <HubInfoComponent
                 v-if="selectedHub"

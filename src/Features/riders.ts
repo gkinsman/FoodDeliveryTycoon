@@ -14,6 +14,8 @@ import { useGame } from './game/game'
 import { Hub } from './hub'
 import { Order } from './orders'
 import { OrderComponent } from './game/OrderComponent'
+import { PaymentComponent } from './game/PaymentComponent'
+import { useGameLog } from './game-log'
 
 export class RiderEntity extends Entity {
   constructor(
@@ -30,6 +32,8 @@ export class RiderEntity extends Entity {
           map,
           initialPosition
         ),
+
+        new PaymentComponent(0),
       ],
       `rider-${riderId}`
     )
@@ -59,6 +63,10 @@ export class RiderEntity extends Entity {
     return transformComponent.position
   }
 }
+
+const maxNumRiders = 20
+
+let numberOfRiders = 0
 
 export function useRiders() {
   function nextRiderId(hub: Hub) {
@@ -93,6 +101,13 @@ export function useRiders() {
 
   function hireRider(map: mapboxgl.Map, hub: Hub) {
     const { mapScene } = useGame()
+    const { write } = useGameLog()
+
+    numberOfRiders += 1
+    if (numberOfRiders >= maxNumRiders) {
+      write('Maximum number of riders reached!')
+      return
+    }
 
     const riderId = nextRiderId(hub)
     const initialPosition = center(hub.feature)

@@ -5,6 +5,7 @@ import mapboxgl from 'mapbox-gl'
 import { SpatialSystem } from './SpatialSystem'
 
 import { init } from './events'
+import { PaymentSystem } from './PaymentSystem'
 
 interface EngineState {
   engine: ShallowRef<ex.Engine | null>
@@ -28,6 +29,7 @@ export function useGame() {
 
     state.scene.value = new MapScene()
     state.scene.value.world.add(new SpatialSystem())
+    state.scene.value.world.add(new PaymentSystem())
     state.engine.value.add('map', state.scene.value)
 
     await state.engine.value.start()
