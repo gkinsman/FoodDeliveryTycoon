@@ -19,7 +19,7 @@ export class PaymentSystem extends ex.System<PaymentComponent> {
       const payment = entity.get('payment') as PaymentComponent
       payment.addTimeSinceLastPayment(delta)
 
-      if (payment.timeSinceLastPayment > 10000) {
+      if (payment.timeSinceLastPayment > 20000) {
         riderFees += 2
         payment.reset()
       }
