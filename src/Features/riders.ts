@@ -8,7 +8,7 @@ import { useGame } from './game/game'
 import { Hub } from './hub'
 import { Order, useOrders } from './orders'
 import { OrderComponent } from './game/OrderComponent'
-import { PaymentComponent } from './game/PaymentComponent'
+import { NeedsPaymentComponent } from './game/NeedsPaymentComponent'
 import { useGameLog } from './game-log'
 
 export class RiderEntity extends Entity {
@@ -29,7 +29,7 @@ export class RiderEntity extends Entity {
           initialPosition
         ),
 
-        new PaymentComponent(0),
+        new NeedsPaymentComponent(0),
       ],
       `rider-${id}`
     )

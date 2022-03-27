@@ -1,32 +1,32 @@
-﻿import { PaymentComponent } from './PaymentComponent'
+﻿import { NeedsPaymentComponent } from './NeedsPaymentComponent'
 import * as ex from 'excalibur'
 import { Entity } from 'excalibur'
 import { RiderEntity } from '../riders'
 import { matMotionPhotosAuto } from '@quasar/extras/material-icons'
 import { useGameState } from '../game-state'
 
-export class PaymentSystem extends ex.System<PaymentComponent> {
+export class PaymentSystem extends ex.System<NeedsPaymentComponent> {
   readonly types = ['payment'] as const
 
   public systemType = ex.SystemType.Update
 
+  private timeSinceLastPayment: number = 0
+
   update(entities: RiderEntity[], delta: number): void {
     const { removeMoney } = useGameState()
 
-    let riderFees = 0
+    const numberOfRiders = entities.length
 
-    for (const entity of entities) {
-      const payment = entity.get('payment') as PaymentComponent
-      payment.addTimeSinceLastPayment(delta)
+    this.timeSinceLastPayment += delta
 
-      if (payment.timeSinceLastPayment > 20000) {
-        riderFees += 2
-        payment.reset()
+    if (this.timeSinceLastPayment > 20000) {
+      const riderFees = numberOfRiders * 2 // $2 per rider
+
+      if (riderFees > 0) {
+        removeMoney(riderFees, 'Rider salaries!')
       }
-    }
 
-    if (riderFees > 0) {
-      removeMoney(riderFees, 'Rider salaries!')
+      this.timeSinceLastPayment = 0
     }
   }
 }
