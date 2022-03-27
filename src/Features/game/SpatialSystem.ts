@@ -3,7 +3,6 @@ import { SpatialTransformComponent } from './SpatialTransformComponent'
 import { WaypointsComponent } from './WaypointsComponent'
 import { Position } from 'geojson'
 import { distance, rhumbBearing, rhumbDestination } from '@turf/turf'
-import { config } from './config'
 import { RiderEntity } from '../riders'
 import { useOrders } from '../orders'
 
@@ -26,10 +25,11 @@ export class SpatialSystem extends ex.System<
     const { completeOrder } = useOrders()
 
     for (let entity of entities) {
-      const transformComponent = entity.get(SpatialTransformComponent)!
+      const transformComponent = entity.get(SpatialTransformComponent)
       const waypointComponent = entity.get(WaypointsComponent)!
 
       if (!waypointComponent) continue
+      if (!transformComponent) continue
 
       if (!waypointComponent.waypoints.geometry.coordinates.length) {
         // No waypoints
@@ -50,7 +50,6 @@ export class SpatialSystem extends ex.System<
 
         if (!nextWaypoint) {
           const completedOrder = entity.finishRoute()
-          const commission = completedOrder.value * config.commission
 
           completeOrder(completedOrder)
 

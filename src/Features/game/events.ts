@@ -46,7 +46,7 @@ function scheduleOrderAssignment() {
           restaurantCenter
         )
 
-        if (availableRider == null) {
+        if (!availableRider) {
           stillUnassignedOrders.push(unassignedOrder)
           unassignedOrder.hub.hasRidersAvailable = false
           continue

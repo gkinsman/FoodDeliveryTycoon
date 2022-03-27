@@ -46,6 +46,11 @@ export class SpatialTransformComponent extends ex.Component<'spatialTransform'> 
   public setPosition(position: Feature<Point>) {
     this._position = position
     const source = this.map.getSource(this._sourceId) as GeoJSONSource
-    source.setData(this._position)
+    source?.setData(this._position)
+  }
+
+  public destroy() {
+    this.map.removeLayer(this._sourceId)
+    this.map.removeSource(this._sourceId)
   }
 }

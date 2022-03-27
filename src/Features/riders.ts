@@ -1,25 +1,21 @@
 ﻿import { Entity } from 'excalibur'
 import { SpatialTransformComponent } from './game/SpatialTransformComponent'
 import { WaypointsComponent } from './game/WaypointsComponent'
-import {
-  center,
-  featureCollection,
-  lineString,
-  nearestPoint,
-  randomPoint,
-} from '@turf/turf'
+import { center, featureCollection, nearestPoint } from '@turf/turf'
 import mapboxgl from 'mapbox-gl'
 import { Feature, LineString, Point } from 'geojson'
 import { useGame } from './game/game'
 import { Hub } from './hub'
-import { Order } from './orders'
+import { Order, useOrders } from './orders'
 import { OrderComponent } from './game/OrderComponent'
 import { PaymentComponent } from './game/PaymentComponent'
 import { useGameLog } from './game-log'
 
 export class RiderEntity extends Entity {
+  public riderId: string
+
   constructor(
-    public riderId: number,
+    public id: number,
     hubName: string,
     map: mapboxgl.Map,
     initialPosition: Feature<Point>
@@ -27,7 +23,7 @@ export class RiderEntity extends Entity {
     super(
       [
         new SpatialTransformComponent(
-          `rider-${riderId}`,
+          `rider-${id}`,
           hubName,
           map,
           initialPosition
@@ -35,8 +31,9 @@ export class RiderEntity extends Entity {
 
         new PaymentComponent(0),
       ],
-      `rider-${riderId}`
+      `rider-${id}`
     )
+    this.riderId = `rider-${id}`
   }
   public setRoute(order: Order, waypoints: Feature<LineString>) {
     this.addComponent(new WaypointsComponent(waypoints))
@@ -52,7 +49,6 @@ export class RiderEntity extends Entity {
     const orderComponent = this.get(OrderComponent)!
     const order = orderComponent.order
     this.removeComponent(orderComponent)
-    console.log(`Rider ${this.riderId} finished route`)
     return order
   }
 
@@ -62,21 +58,32 @@ export class RiderEntity extends Entity {
     position.properties!['riderId'] = this.riderId
     return transformComponent.position
   }
+
+  public fire() {
+    const spatialComponent = this.get(SpatialTransformComponent)!
+    this.removeComponent(spatialComponent)
+    this.removeComponent('waypoints')
+    spatialComponent.destroy()
+
+    const { cancelOrder } = useOrders()
+    const order = this.get(OrderComponent)
+    if (order) {
+      cancelOrder(order.order, 'rider was fired')
+    }
+  }
 }
 
-const maxNumRiders = 20
+const maxNumRiders = 50
 
 let numberOfRiders = 0
 
+let riderNumber = 1
+
 export function useRiders() {
   function nextRiderId(hub: Hub) {
-    if (!hub.riders.length) return 1
-    return (
-      Math.max.apply(
-        Math,
-        hub.riders.map((rider) => rider.riderId)
-      ) + 1
-    )
+    const newId = riderNumber
+    riderNumber++
+    return newId
   }
 
   function findClosestUnassignedRider(
@@ -86,7 +93,6 @@ export function useRiders() {
     if (!hub.riders.length) return null
 
     const unassignedRiders = hub.riders.filter((rider) => !rider.isAssigned)
-
     if (!unassignedRiders.length) return null
 
     const unassignedRiderLocations = featureCollection(
@@ -120,8 +126,28 @@ export function useRiders() {
     hub.riders.push(rider)
   }
 
+  function fireRider(map: mapboxgl.Map, hub: Hub, riderId: string) {
+    const { mapScene } = useGame()
+
+    const riderToFire = hub.riders.find((rider) => rider.riderId === riderId)
+
+    if (!riderToFire) {
+      console.log(`Could not find rider to fire ${riderId}`)
+      return
+    }
+
+    hub.riders = hub.riders.filter((rider) => rider.riderId !== riderId)
+    mapScene?.world.remove(riderToFire)
+    riderToFire.fire()
+    numberOfRiders -= 1
+
+    const { write } = useGameLog()
+    write(`Rider ${riderId} was fired!`)
+  }
+
   return {
     hireRider,
+    fireRider,
     findClosestUnassignedRider,
   }
 }

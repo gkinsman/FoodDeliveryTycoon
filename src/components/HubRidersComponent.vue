@@ -14,7 +14,16 @@
         label="Hire Rider"
       ></QBtn>
       <QList>
-        <QItem :key="rider.id" v-for="rider in hub.riders">
+        <QItem class="row" :key="rider.id" v-for="rider in hub.riders">
+          <QItemSection class="col-1">
+            <QBtn
+              @click="fireRider(map, hub, rider.riderId)"
+              dense
+              size="sm"
+              label="Fire"
+              color="red"
+            ></QBtn>
+          </QItemSection>
           <QItemSection>{{ rider.name }}</QItemSection>
         </QItem>
       </QList>
@@ -32,7 +41,7 @@ const props = defineProps<{
   map: mapboxgl.Map
 }>()
 
-const { hireRider } = useRiders()
+const { hireRider, fireRider } = useRiders()
 </script>
 
 <style scoped></style>

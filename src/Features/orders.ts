@@ -82,14 +82,26 @@ export function useOrders() {
   function completeOrder(order: Order) {
     const { addMoney } = useGameState()
 
-    const marker = state.orders.get(order.id)
-    if (marker) {
-      marker.remove()
-      state.orders.delete(order.id)
-    }
+    removeMarker(order)
+    state.orders.delete(order.id)
 
     const commission = config.commission * order.value
     addMoney(commission, 'commission')
+  }
+
+  function removeMarker(order: Order) {
+    const marker = state.orders.get(order.id)
+    if (marker) {
+      marker.remove()
+    }
+  }
+
+  function cancelOrder(order: Order, reason: string) {
+    removeMarker(order)
+    state.orders.delete(order.id)
+
+    const { write } = useGameLog()
+    write(`Order ${order.id} was cancelled because: ${reason}`)
   }
 
   // async function
@@ -99,5 +111,6 @@ export function useOrders() {
     init,
     generateOrder,
     completeOrder,
+    cancelOrder,
   }
 }
