@@ -20,7 +20,7 @@ export class PaymentSystem extends ex.System<NeedsPaymentComponent> {
     this.timeSinceLastPayment += delta
 
     if (this.timeSinceLastPayment > 20000) {
-      const riderFees = numberOfRiders * 2 // $2 per rider
+      const riderFees = numberOfRiders * 1 // $2 per rider
 
       if (riderFees > 0) {
         removeMoney(riderFees, 'Rider salaries!')
