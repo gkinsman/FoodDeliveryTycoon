@@ -6,12 +6,12 @@ import * as ex from 'excalibur'
 import { useRiders } from '../riders'
 import { center, feature } from '@turf/turf'
 import { useMapbox } from '../data/mapbox'
-import { useGameLog } from '../game-log'
+import { Timer } from 'excalibur'
 
 function scheduleOrderCreation() {
   const { state } = useGame()
 
-  const timer = new ex.Timer({
+  const timer = new Timer({
     fcn: async () => {
       const { generateOrder } = useOrders()
       const { ownedHubs } = useGameState()
@@ -21,7 +21,7 @@ function scheduleOrderCreation() {
       }
     },
     repeats: true,
-    interval: 8000,
+    interval: 3000,
   })
 
   state.scene.value?.add(timer)
